@@ -42,6 +42,7 @@ typedef struct {
     int max_depth;
     int depth;
     int val;
+    int side;
     void *param;
     cckr_traversal_inner_func_t func;
     cckr_evaluate_func_t endfunc;
@@ -59,7 +60,7 @@ typedef struct {
     int best;
     cckr_step_history history;
     cckr_index_t step[16*2];
-    int tmp;
+    int side;
 } cckr_traverse_optimize_param_t;
 
 
@@ -73,12 +74,13 @@ int cckr_game_board_recover(cckr_t *pcckr, cckr_step_history *history);
 
 
 int cckr_print(cckr_t *pcckr);
+int cckr_print_to_string_kernel(cckr_t *pcckr, const char *patt, char *buff);
 int cckr_print_to_string(cckr_t *pcckr, char *buff);
 int cckr_print_to_string_4colrow(cckr_t *pcckr, char *buff);
+int cckr_print_avaible_to_string(cckr_index_t *result, char *string, int count);
 
 int cckr_get_avaible_count_for_side(cckr_t *pcckr, cckr_index_t side);
 int cckr_get_avaible_for_side(cckr_t *pcckr, cckr_index_t side, cckr_index_t *buff);
-int cckr_print_avaible_to_string(cckr_index_t *result, char *string, int count);
 int cckr_get_path_between_move(cckr_t *pcckr, cckr_index_t s, cckr_index_t e, cckr_index_t *path);
 
 int cckr_evaluate_board_score(cckr_t *pcckr, int side);

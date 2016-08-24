@@ -88,16 +88,15 @@ void table_ruler_y_make() {
 
 void table_ruler_x_make() {
     char text[200], *sp;
+    *text = '"';
     for (int d = 1; d < 6; ++d) {
         printf("    //      direction %d \n", d);
-        sp = text;
-        *sp++ = '"';
+        sp = text+1;
         for (int i = 0; i < CCKR_LEN; ++i) {
             sp += sprintf(sp, "\\%03o", cckr_table_4x[cckr_table_rotate[d][i]]);
             if (sp > text+4*11) {
                 printf("%s\"\n",text);
-                sp = text;
-                *sp++ = '"';
+                sp = text+1;
                 *sp = 0;
             }
         }
@@ -172,70 +171,65 @@ void test_path_between_move() {
 
 
 int test(int ii) {
-//    test_path_between_move();
-//    table_ruler_y_make();
-    //    table_rotate_check();
-    //    table_rotate_x_make();
-    //    table_rotate_make();
-//    return 0;
-    cckr_step_history csh = {
-        .history = {
-            {7, 16},
-            {2, 29},
-            {6, 40},
-            {8, 30},
-            {1, 42},
-            {42, 52},
-            {3, 53},
-            {4, 61},
-            {5, 43},
-            {10, 71},
-            {16, 81},
-            {52, 93}
-        },
-        .size = 12//12
-    };
-    
+    char text[100];
     cckr_t cckr;
+    cckr_traverse_optimize_param_t ctop={0};
+    cckr_move_t *move = ctop.history.history;
+    
     cckr_game_board_init(&cckr);
     //    cckr_game_board_recover(&cckr, &csh);
-    char text[100];
-    for (int i = 0; i < csh.size; ++i) {
-        cckr_get_short_path_string(&cckr, csh.history[i].orig, csh.history[i].dest, text);
-        
-        cckr_index_t buffer[100];
-        int l = cckr_get_path_between_move(&cckr,csh.history[i].orig, csh.history[i].dest, buffer)-1;
 
-        CCKR_MOVE(&cckr, csh.history[i].orig, csh.history[i].dest);
-        CCKR_MANI(&cckr, csh.history[i].orig)=2;
-        for (int j = 0; j < l; ++j) {
-            CCKR_MANI(&cckr, buffer[j]) = 2;
-        }
-        
+    cckr_print(&cckr);
+
+    ctop.side = 1;
+    for (int i = 0; i < 40; ++i) {
+        ctop.best = - CCKR_INT_MAX;
+        cckr_traversal(&cckr, CCKR_SEARCH_DEPTH, cckr_traversal_inner, cckr_evaluate_board_score, &ctop);
+
+        cckr_get_short_path_string(&cckr, move->orig, move->dest, text);
+        CCKR_MOVE(&cckr, move->orig, move->dest);
         cckr_print(&cckr);
-
-        CCKR_MANI(&cckr, csh.history[i].orig)=0;
-        for (int j = 0; j < l; ++j) {
-            CCKR_MANI(&cckr, buffer[j]) = 0;
-        }
-        
         printf("No %d step, move %d to %d, %s.\n"
-               "-------------------------\n", i+1, csh.history[i].orig, csh.history[i].dest, text);
+               "-------------------------\n", i+1, move->orig, move->dest, text);
+        
+        ctop.side = 5-ctop.side;
     }
     
     
-    //    cckr_get_short_path_string(&cckr, csh.history[6], csh.history[7], text);
-    
-    //    cckr_print(&cckr);
-    //    cckr_get_path_between_move(&cckr, 52, 93, NULL);
-    
-    cckr_index_t buff[100];
-    int len = cckr_get_path_between_move(&cckr, 16, 81, buff);
-    printf("%d ", 16);
-    for (int i = 0; i < len; ++i) {
-        printf("%d ", buff[i]);
-    }
-    printf("\n");
+//    for (int i = 0; i < csh.size; ++i) {
+//        cckr_get_short_path_string(&cckr, csh.history[i].orig, csh.history[i].dest, text);
+//        
+//        cckr_index_t buffer[100];
+//        int l = cckr_get_path_between_move(&cckr,csh.history[i].orig, csh.history[i].dest, buffer)-1;
+//
+//        CCKR_MOVE(&cckr, csh.history[i].orig, csh.history[i].dest);
+//        CCKR_MANI(&cckr, csh.history[i].orig)=2;
+//        for (int j = 0; j < l; ++j) {
+//            CCKR_MANI(&cckr, buffer[j]) = 2;
+//        }
+//        
+//        cckr_print(&cckr);
+//
+//        CCKR_MANI(&cckr, csh.history[i].orig)=0;
+//        for (int j = 0; j < l; ++j) {
+//            CCKR_MANI(&cckr, buffer[j]) = 0;
+//        }
+//        
+//    }
+//    
+//    
+//    //    cckr_get_short_path_string(&cckr, csh.history[6], csh.history[7], text);
+//    
+//    //    cckr_print(&cckr);
+//    //    cckr_get_path_between_move(&cckr, 52, 93, NULL);
+//    
+//    cckr_index_t buff[100];
+//    int len = cckr_get_path_between_move(&cckr, 16, 81, buff);
+//    printf("%d ", 16);
+//    for (int i = 0; i < len; ++i) {
+//        printf("%d ", buff[i]);
+//    }
+//    printf("\n");
     
     return 0;
 }
@@ -292,13 +286,16 @@ int aitest(){
             {29, 72},
             {17, 105},
             {43, 83},
+            {40, 41},
+            {71, 114},
+            {114, 117},
+            {30, 119},
         },
-        .size = 16//12
+        .size = 20//12
     };
     
     cckr_t cckr;
     cckr_traverse_optimize_param_t ctop={0};
-
     cckr_game_board_recover(&cckr, &csh);
     
     ctop.best = -CCKR_INT_MAX;

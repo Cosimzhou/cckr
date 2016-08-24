@@ -11,6 +11,6 @@
 #include "cckr-tools.h"
 
 int main(int argc, const char * argv[]) {
-    aitest(0);
+    test(0);
     return 0;
 }

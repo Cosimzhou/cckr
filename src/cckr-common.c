@@ -21,7 +21,7 @@ int cckr_game_board_init(cckr_t *pcckr) {
     memset(pcckr, 0, sizeof(cckr_t));
     for (int i = 0; i<10; ++i) {
         CCKR_MANI(pcckr, cckr_nest_indices[0][i]) = 1;
-//        CCKR_MANI(pcckr, cckr_nest_indices[5][i]) = 2;
+        CCKR_MANI(pcckr, cckr_nest_indices[3][i]) = 4;
     }
     return 0;
 }
@@ -223,6 +223,7 @@ int cckr_get_path_between_move(cckr_t *pcckr, cckr_index_t s, cckr_index_t e, cc
             try_skip_direction(ncc, d);
             try_skip_direction(ncc, e);
             try_skip_direction(ncc, f);
+#undef try_skip_direction
         }
 
         if (ssp->move.dest == e) {
@@ -265,8 +266,7 @@ int cckr_print(cckr_t *pcckr) {
     return 0;
 }
 
-int cckr_print_to_string(cckr_t *pcckr, char *buff) {
-    const char *cchmanchr="_O@*#xm";
+int cckr_print_to_string_kernel(cckr_t *pcckr, const char *patt, char *buff) {
     const char *space = "    ";//' '*5
     int i, j, idx, enter;
     for (i = 0; i < CCKR_ROW; ++i) {
@@ -276,34 +276,7 @@ int cckr_print_to_string(cckr_t *pcckr, char *buff) {
             idx = XY2IDX(j, 16-i);
             if (idx) {
                 enter = 1;
-                *buff++ = cchmanchr[CCKR_MANI(pcckr, idx)];
-            } else if (enter) {
-                --buff;
-                break;
-            } else
-                *buff++= ' ';
-
-            if (j>=i-4 || (9<=i && i<=12 && enter))
-                *buff++ = ' ';
-        }
-        *buff++ = '\n';
-    }
-    *buff = 0;
-    return 0;
-}
-
-int cckr_print_to_string_4colrow(cckr_t *pcckr, char *buff) {
-    const char *space = "    ";//' '*5
-    int i, j, idx, enter;
-    for (i = 0; i < CCKR_ROW; ++i) {
-        if (i < 4) buff += sprintf(buff, "%s", space+i);
-        for (j = enter = 0; j < CCKR_ROW; ++j) {
-            if (9<=i && i<=12 && j==0) j += i-8;
-            idx = XY2IDX(j, 16-i);
-            if (idx) {
-                enter = 1;
-                idx = CCKR_MANI(pcckr, idx);
-                *buff++ = idx<10? '0'+idx: 'A'+idx-10;
+                *buff++ = patt[CCKR_MANI(pcckr, idx)];
             } else if (enter) {
                 --buff;
                 break;
@@ -317,6 +290,16 @@ int cckr_print_to_string_4colrow(cckr_t *pcckr, char *buff) {
     }
     *buff = 0;
     return 0;
+}
+
+inline int cckr_print_to_string(cckr_t *pcckr, char *buff) {
+    const char *cchmanchr="_O@*#xm";
+    return cckr_print_to_string_kernel(pcckr, cchmanchr, buff);
+}
+
+inline int cckr_print_to_string_4colrow(cckr_t *pcckr, char *buff) {
+    const char *cchmanchr="0123456789ABCDEFG";
+    return cckr_print_to_string_kernel(pcckr, cchmanchr, buff);
 }
 
 int cckr_print_avaible_to_string(cckr_index_t *result, char *string, int count) {
@@ -357,12 +340,12 @@ int cckr_traversal_inner(void *ptr) {
 
 int cckr_traversal_each_level(cckr_traverse_param_t *pctp) {
     if (pctp->depth == CCKR_SEARCH_DEPTH)
-        return pctp->endfunc(pctp->pcckr, 1);
+        return pctp->endfunc(pctp->pcckr, pctp->side);
     
     int idx = ++pctp->depth;
     idx <<= 1;
     pctp->val = -CCKR_INT_MAX;
-    FOREACH_AVAIABLES_BEGIN(pctp->pcckr, 1, ch, dch, );
+    FOREACH_AVAIABLES_BEGIN(pctp->pcckr, pctp->side, ch, dch, );
     {
         CCKR_MOVE(pctp->pcckr, ch, dch);
         
@@ -373,7 +356,7 @@ int cckr_traversal_each_level(cckr_traverse_param_t *pctp) {
         
         CCKR_UNMOVE(pctp->pcckr, ch, dch);
     }
-    FOREACH_AVAIABLES_END(pctp->pcckr, 1, ch, dch, );
+    FOREACH_AVAIABLES_END(pctp->pcckr, pctp->side, ch, dch, );
     
     --pctp->depth;
     return pctp->val;
@@ -389,7 +372,8 @@ int cckr_traversal(cckr_t *pcckr, int depth, cckr_traversal_inner_func_t func, c
         .max_depth = depth,
         .param = param,
         .func = func,
-        .endfunc = evalfunc
+        .endfunc = evalfunc,
+        .side = ((cckr_traverse_optimize_param_t*)param)->side
     };
     
     if (depth > sizeof(ctp.stack)/2)
