@@ -6,34 +6,14 @@
 //  Copyright © 2009年 Sestall. All rights reserved.
 //
 
-#ifndef cckr_h
-#define cckr_h
+#ifndef __CCKR_H__
+#define __CCKR_H__
 
 #define CCKR_NUM    121
-#define CCKR_TRAVERSAL(pcckr)       cckr_traversal(pcckr, -1)
+#define CCKR_LEN    (CCKR_NUM+1)
 
-typedef unsigned char byte;
+#include "cckr-const.h"
+#include "cckr-common.h"
+#include "cckr-evaluate.h"
 
-typedef struct {
-    byte cchm[CCKR_NUM];
-    union {
-        char xx[7];
-    };
-} CCKR;
-
-typedef struct {
-    byte buff[200];
-} CAAC;
-
-int test(int);
-
-int cckr_init_game_board(CCKR *pcckr);
-
-int cckr_print_to_string(CCKR *pcckr, char *buff);
-int cckr_print_avaible_to_string(byte *result, char *string, int count);
-
-int cckr_evaluate_board_score(CCKR *pcckr, int side);
-
-int cckr_traversal(CCKR *pcckr, int depth);
-
-#endif /* cckr_h */
+#endif /* __CCKR_H__ */
