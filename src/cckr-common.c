@@ -29,7 +29,7 @@ int cckr_game_board_init(cckr_t *pcckr) {
 int cckr_game_board_recover(cckr_t *pcckr, cckr_step_history *history) {
     cckr_game_board_init(pcckr);
     for (int i = 0; i < history->size; ++i) {
-        CCKR_MOVE(pcckr, history->history[i].orig, history->history[i].dest);
+        CCKR_MOVE_T(pcckr, history->history+i);
     }
     return 0;
 }
@@ -60,31 +60,35 @@ cckr_step_history_copy_history(cckr_step_history *dest, cckr_step_history *src) 
 
 
 int cckr_search_way_for_hopping(cckr_t *pcckr, int index, cckr_index_t *buff) {
-    int nc, ncc, sum=0;
+    int nc, ncc, sum=0, i = 0;
     CCKR_VISITI(pcckr, index);
     buff[sum++] = index;
     
+    while (i < sum) {
 #ifdef CCKR_NEXT_TABLE
 #   define search_direction(c)                                                  \
-    if (0!=(ncc=INEXT_##c##2(index)) && 0==CCKR_MANI(pcckr, ncc)                \
-        && 0!=(nc=INEXT_##c(index)) && !CCKR_MANI_NULL(pcckr, nc)) {            \
-        sum += cckr_search_way_for_hopping(pcckr, ncc, buff+sum);               \
+    if (0!=(ncc=INEXT_##c##2(buff[i])) && 0==CCKR_MANI(pcckr, ncc)              \
+        && 0!=(nc=INEXT_##c(buff[i])) && !CCKR_MANI_NULL(pcckr, nc)) {          \
+        CCKR_VISITI(pcckr, ncc); buff[sum++] = ncc;                             \
     }
+        
 #else //CCKR_NEXT_TABLE
 #   define search_direction(c)                                                  \
     if (0!=(ncc=INEXT_##c##2(_x,_y)) && 0==CCKR_MANI(pcckr, ncc)                \
         && 0!=(nc=INEXT_##c(_x,_y)) && !CCKR_MANI_NULL(pcckr, nc)) {            \
-        sum += cckr_search_way_for_hopping(pcckr, ncc, buff+sum);               \
+        CCKR_VISITI(pcckr, ncc); buff[sum++] = ncc;                             \
     }
-    DES_I(index);
+        DES_I(buff[i]);
 #endif //CCKR_NEXT_TABLE
-    search_direction(a);
-    search_direction(b);
-    search_direction(c);
-    search_direction(d);
-    search_direction(e);
-    search_direction(f);
 
+        search_direction(a);
+        search_direction(b);
+        search_direction(c);
+        search_direction(d);
+        search_direction(e);
+        search_direction(f);
+        ++i;
+    }
 #undef search_direction
     return sum;
 }
@@ -186,22 +190,34 @@ int cckr_get_path_between_move(cckr_t *pcckr, cckr_index_t s, cckr_index_t e, cc
         }                                                                       \
     }
     
+#   define DDES_I(i)
 #   define try_skip_direction(w, c)                                             \
     if (0 != (nc = INEXT_##c##2((w))) && !CCKR_MANI_NULL(pcckr, INEXT_##c((w))) \
         && CCKR_MANI(pcckr, nc) == 0)                                           \
-        sp->move.orig=(w), sp->move.dest = nc, (sp++)->step = ssp->step+1
+        sp->move.orig = (w), sp->move.dest = nc, (sp++)->step = ssp->step+1
     
     
 #else// CCKR_NEXT_TABLE
 #   define search_direction(c)                                                  \
     if (0 != (nc = INEXT_##c(_x,_y))) {                                         \
-        if (CCKR_MANI_NULL(pcckr, nc)) {                                        \
-            buff[top++] = nc;                                                   \
-        } else if (0!=(ncc=INEXT_##c##2(_x,_y)) && 0==CCKR_MANI(pcckr, ncc)) {  \
-            if (ncc == e)\
-            top += cckr_search_way_for_hopping(pcckr, ncc, buff+top);           \
+        if (nc == e) {                                                          \
+            *path = e;                                                          \
+            return 1;                                                           \
+        } else if (0 != (ncc=INEXT_##c##2(_x,_y)) && !CCKR_MANI_NULL(pcckr, nc) \
+                    && CCKR_MANI(pcckr, ncc)==0) {                              \
+            if (ncc == e) {                                                     \
+                *path = e;                                                      \
+                return 1;                                                       \
+            }                                                                   \
+            sp->move.orig = s; sp->move.dest=ncc;(sp++)->step = 1;              \
         }                                                                       \
     }
+    
+#   define DDES_I(i)                    int _x_=IDX2X(i), _y_=IDX2Y(i)
+#   define try_skip_direction(w, c)                                             \
+    if (0 != (nc = INEXT_##c##2(_x_,_y_)) && !CCKR_MANI_NULL(pcckr, INEXT_##c(_x_,_y_)) \
+        && CCKR_MANI(pcckr, nc) == 0)                                           \
+        sp->move.orig = (w), sp->move.dest = nc, (sp++)->step = ssp->step+1
     
     DES_I(s);
 #endif // CCKR_NEXT_TABLE
@@ -217,6 +233,7 @@ int cckr_get_path_between_move(cckr_t *pcckr, cckr_index_t s, cckr_index_t e, cc
         if (CCKR_MANI(pcckr, ssp->move.dest) == 0) {
             CCKR_VISITI(pcckr, ssp->move.dest);
             ncc = ssp->move.dest;
+            DDES_I(ncc);
             try_skip_direction(ncc, a);
             try_skip_direction(ncc, b);
             try_skip_direction(ncc, c);
@@ -227,11 +244,11 @@ int cckr_get_path_between_move(cckr_t *pcckr, cckr_index_t s, cckr_index_t e, cc
         }
 
         if (ssp->move.dest == e) {
-            int a = cckr_push_short_path_stack(ssp, mid, s);
-            if (len > a) {
-                len = a;
+            int path_len = cckr_push_short_path_stack(ssp, mid, s);
+            if (len > path_len) {
+                len = path_len;
                 path = spath;
-                while (a--) *path++ = mid[a];
+                while (path_len--) *path++ = mid[path_len];
                 *path++ = e;
             }
         }
@@ -267,7 +284,7 @@ int cckr_print(cckr_t *pcckr) {
 }
 
 int cckr_print_to_string_kernel(cckr_t *pcckr, const char *patt, char *buff) {
-    const char *space = "    ";//' '*5
+    const char space[] = {32, 32, 32, 32, 0};//"    "; //' '*5
     int i, j, idx, enter;
     for (i = 0; i < CCKR_ROW; ++i) {
         if (i < 4) buff += sprintf(buff, "%s", space+i);
@@ -321,7 +338,6 @@ int cckr_print_avaible_to_string(cckr_index_t *result, char *string, int count) 
 int cckr_traversal_inner(void *ptr) {
     cckr_traverse_param_t *pctp = ptr;
     cckr_traverse_optimize_param_t *pctop = pctp->param;
-    
     int old = pctop->best, depth = pctp->depth, val = pctp->val;
 
     if (depth == CCKR_SEARCH_DEPTH && pctop->best < val) {
@@ -342,8 +358,7 @@ int cckr_traversal_each_level(cckr_traverse_param_t *pctp) {
     if (pctp->depth == CCKR_SEARCH_DEPTH)
         return pctp->endfunc(pctp->pcckr, pctp->side);
     
-    int idx = ++pctp->depth;
-    idx <<= 1;
+    int idx = (++pctp->depth) << 1;
     pctp->val = -CCKR_INT_MAX;
     FOREACH_AVAIABLES_BEGIN(pctp->pcckr, pctp->side, ch, dch, );
     {

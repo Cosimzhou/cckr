@@ -9,6 +9,7 @@
 #include "cckr-tools.h"
 #include "cckr-private.h"
 #include <stdio.h>
+#include <time.h>
 
 void table_next_make() {
     printf("const char *cckr_table_next_a = ");
@@ -181,20 +182,21 @@ int test(int ii) {
 
     cckr_print(&cckr);
 
+    time_t t = clock();
     ctop.side = 1;
     for (int i = 0; i < 40; ++i) {
         ctop.best = - CCKR_INT_MAX;
         cckr_traversal(&cckr, CCKR_SEARCH_DEPTH, cckr_traversal_inner, cckr_evaluate_board_score, &ctop);
 
         cckr_get_short_path_string(&cckr, move->orig, move->dest, text);
-        CCKR_MOVE(&cckr, move->orig, move->dest);
+        CCKR_MOVE_T(&cckr, move);
         cckr_print(&cckr);
         printf("No %d step, move %d to %d, %s.\n"
                "-------------------------\n", i+1, move->orig, move->dest, text);
         
         ctop.side = 5-ctop.side;
     }
-    
+    printf("\nelapsed time: %f second.\n", (clock()-t)/1e6);
     
 //    for (int i = 0; i < csh.size; ++i) {
 //        cckr_get_short_path_string(&cckr, csh.history[i].orig, csh.history[i].dest, text);
@@ -257,7 +259,7 @@ int test1(){
     
     cckr_game_board_init(&cckr);
     for (int i = 0; i < rcsh.size; ++i) {
-        CCKR_MOVE(&cckr, rcsh.history[i].orig, rcsh.history[i].dest);
+        CCKR_MOVE_T(&cckr, rcsh.history+i);
         cckr_print(&cckr);
         printf("No %d step, move %d to %d.\n"
                "-------------------------\n", i+1, rcsh.history[i].orig, rcsh.history[i].dest);
@@ -308,7 +310,7 @@ int aitest(){
     char text[100];
     for (int i = 0; i < csh.size; ++i) {
         cckr_get_short_path_string(&cckr, csh.history[i].orig, csh.history[i].dest, text);
-        CCKR_MOVE(&cckr, csh.history[i].orig, csh.history[i].dest);
+        CCKR_MOVE_T(&cckr, csh.history+i);
         cckr_print(&cckr);
         printf("No %d step, move %d to %d, %s.\n"
                "-------------------------\n", i+1, csh.history[i].orig, csh.history[i].dest, text);

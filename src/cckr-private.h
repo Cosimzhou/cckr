@@ -33,7 +33,7 @@
 #define CCKR_ISINDEX(i)             (0<i&&i<CCKR_LEN)
 
 #define IDX2X(i)                    (cckr_table_4x[i])
-#define IDX2Y(i)                    ((*cckr_table_y)[i])
+#define IDX2Y(i)                    (cckr_table_4y[i])
 #define XY2IDX(x,y)                 (cckr_table_reverse[y][x])
 ///////////////////////////////////////////////////////////
 #define DES_I(i)                    int _x=IDX2X(i), _y=IDX2Y(i)
@@ -118,7 +118,9 @@
                                         CCKR_MANI(pcckr,t)=CCKR_MANI(pcckr,f);  \
                                         CCKR_MANI(pcckr,f)=0;                   \
                                     })
+#define CCKR_MOVE_T(pcckr,m)        CCKR_MOVE(pcckr,(m)->orig,(m)->dest)
 #define CCKR_UNMOVE(pcckr,f,t)      CCKR_MOVE(pcckr,t,f)
+#define CCKR_UNMOVE_T(pcckr,m)      CCKR_MOVE(pcckr,(m)->dest,(m)->orig)
 
 
 #define FOREACH_AVAIABLES_BEGIN(pcckr, side, ch, dch, action)                   \

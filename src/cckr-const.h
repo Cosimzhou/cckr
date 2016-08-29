@@ -27,4 +27,5 @@ extern const char *cckr_table_next_move[];
 
 extern const char *cckr_table_reverse[];
 extern const char *cckr_nest_indices[];
+
 #endif /* __CCKR_CONST_H__ */

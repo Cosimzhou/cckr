@@ -82,6 +82,7 @@ int cckr_print_avaible_to_string(cckr_index_t *result, char *string, int count);
 int cckr_get_avaible_count_for_side(cckr_t *pcckr, cckr_index_t side);
 int cckr_get_avaible_for_side(cckr_t *pcckr, cckr_index_t side, cckr_index_t *buff);
 int cckr_get_path_between_move(cckr_t *pcckr, cckr_index_t s, cckr_index_t e, cckr_index_t *path);
+int cckr_get_short_path_string(cckr_t *pcckr, cckr_index_t s, cckr_index_t e, char *buff);
 
 int cckr_evaluate_board_score(cckr_t *pcckr, int side);
 
