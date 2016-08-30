@@ -7,7 +7,22 @@
 //
 
 #include "cckr-const.h"
+const char cckr_board_place_holder_space[] = {cckr_board_char_space,
+    cckr_board_char_space,
+    cckr_board_char_space,
+    cckr_board_char_space,
+    0
+};
 
+const char cckr_chess_man_char[] = {cckr_board_char_null,
+    cckr_board_char_1,
+    cckr_board_char_2,
+    cckr_board_char_3,
+    cckr_board_char_4,
+    cckr_board_char_5,
+    cckr_board_char_6,
+    cckr_board_char_space
+};
 
 const char *cckr_table_x[] ={
     //      direction 0

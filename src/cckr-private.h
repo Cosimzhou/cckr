@@ -122,6 +122,9 @@
 #define CCKR_UNMOVE(pcckr,f,t)      CCKR_MOVE(pcckr,t,f)
 #define CCKR_UNMOVE_T(pcckr,m)      CCKR_MOVE(pcckr,(m)->dest,(m)->orig)
 
+#define STRING_APPEND(str,...)                                                  \
+                        str += sprintf(str, __VA_ARGS__)
+
 
 #define FOREACH_AVAIABLES_BEGIN(pcckr, side, ch, dch, action)                   \
                         cckr_index_t _avaibles[1024];                           \
@@ -140,5 +143,8 @@
                             }                                                   \
                             action;                                             \
                         }
+
+#define FOREACH_PIT_IN_BOARD(i)                                                 \
+                    for (i = 1; i < CCKR_LEN; ++i)
 
 #endif /* __CCKR_PRIVATE_H__ */

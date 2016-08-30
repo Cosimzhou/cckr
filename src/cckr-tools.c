@@ -28,7 +28,7 @@ void table_rotate_make() {
         for (int j = 0; j < 17; ++j) {
             int val = cckr_table_reverse[j][i];
             if (val) {
-                sp += sprintf(sp, "\\%03o", val);
+                STRING_APPEND(sp, "\\%03o", val);
                 if (sp > text+4*11) {
                     printf("%s\"\n",text);
                     sp = text;
@@ -45,7 +45,7 @@ void table_rotate_make() {
         for (int j = 0; j < 17; ++j) {
             int val = cckr_table_reverse[i][j];
             if (val) {
-                sp += sprintf(sp, "\\%03o", i+j-7);
+                STRING_APPEND(sp, "\\%03o", i+j-7);
                 if (sp > text+4*11) {
                     printf("%s\"\n",text);
                     sp = text;
@@ -62,7 +62,7 @@ void table_rotate_x_make() {
     char text[200] = "\"", *sp = text+1;
     printf("const char *cckr_table_rotate_b = \n");
     for (int i = 0; i < CCKR_LEN; ++i) {
-        sp += sprintf(sp, "\\%03o", cckr_table_rotate[3][cckr_table_rotate[0][i]]);
+        STRING_APPEND(sp, "\\%03o", cckr_table_rotate[3][cckr_table_rotate[0][i]]);
         if (sp > text+4*11) {
             printf("%s\"\n",text);
             sp = text;
@@ -76,7 +76,7 @@ void table_ruler_y_make() {
     char text[200] = "\"", *sp = text+1;
     printf("const char *(*cckr_table_y)_5 = \n");
     for (int i = 0; i < CCKR_LEN; ++i) {
-        sp += sprintf(sp, "\\%03o", (*cckr_table_y)[cckr_table_rotate[4][i]]);
+        STRING_APPEND(sp, "\\%03o", (*cckr_table_y)[cckr_table_rotate[4][i]]);
         if (sp > text+4*11) {
             printf("%s\"\n",text);
             sp = text;
@@ -94,7 +94,7 @@ void table_ruler_x_make() {
         printf("    //      direction %d \n", d);
         sp = text+1;
         for (int i = 0; i < CCKR_LEN; ++i) {
-            sp += sprintf(sp, "\\%03o", cckr_table_4x[cckr_table_rotate[d][i]]);
+            STRING_APPEND(sp, "\\%03o", cckr_table_4x[cckr_table_rotate[d][i]]);
             if (sp > text+4*11) {
                 printf("%s\"\n",text);
                 sp = text+1;
@@ -171,10 +171,21 @@ void test_path_between_move() {
 }
 
 
-int test(int ii) {
+int test(int a) {
+    cckr_t cckr;
+    cckr_game_board_init_with_command(&cckr, "OOOOOOOOOO112##########");
+    cckr_print(&cckr);
+    
+    char buff[1000];
+    cckr_print_to_command(&cckr, buff);
+    printf("%s\n", buff);
+    return 0;
+}
+
+int testx(int ii) {
     char text[100];
     cckr_t cckr;
-    cckr_traverse_optimize_param_t ctop={0};
+    cckr_traverse_optimize_param_t ctop = {0};
     cckr_move_t *move = ctop.history.history;
     
     cckr_game_board_init(&cckr);

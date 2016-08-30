@@ -26,6 +26,39 @@ int cckr_game_board_init(cckr_t *pcckr) {
     return 0;
 }
 
+int cckr_game_board_init_with_command(cckr_t *pcckr, const char *expr) {
+    if (!expr || !*expr) return 0;
+        
+    int i, n = 0;
+    char ch;
+    cckr_chessman_t c = 0;
+    memset(pcckr, 0, sizeof(cckr_t));
+    FOREACH_PIT_IN_BOARD(i) {
+        c = 0;
+        switch (ch = *expr++) {
+            case 0:return 0;
+            case cckr_board_char_6:c++;
+            case cckr_board_char_5:c++;
+            case cckr_board_char_4:c++;
+            case cckr_board_char_3:c++;
+            case cckr_board_char_2:c++;
+            case cckr_board_char_1:c++;
+                if (n > 0) i = n, n = 0;
+                CCKR_MANI(pcckr, i) = c;
+                break;
+            case '0':case '1':case '2':case '3':case '4':
+            case '5':case '6':case '7':case '8':case '9':
+                n = n*10 + (ch-'0');
+                break;
+            case cckr_board_char_null:
+            default:
+                CCKR_MANI(pcckr, i) = 0;
+                break;
+        }
+    }
+    return 0;
+}
+
 int cckr_game_board_recover(cckr_t *pcckr, cckr_step_history *history) {
     cckr_game_board_init(pcckr);
     for (int i = 0; i < history->size; ++i) {
@@ -133,9 +166,9 @@ int cckr_get_available_pit_for_index(cckr_t *pcckr, int index, cckr_index_t *buf
 }
 
 int cckr_get_avaible_for_side(cckr_t *pcckr, cckr_index_t side, cckr_index_t *buff) {
-    int rest = 10;
+    int i, rest = 10;
     cckr_index_t *buffer = buff;
-    for (int i = 1; i < CCKR_LEN; ++i) {
+    FOREACH_PIT_IN_BOARD(i) {
         if (CCKR_MANI(pcckr, i) == side) {
             *buff++ = i;
             *buff = cckr_get_available_pit_for_index(pcckr, i, buff+1);
@@ -263,13 +296,17 @@ int cckr_get_path_between_move(cckr_t *pcckr, cckr_index_t s, cckr_index_t e, cc
     return (len < CCKR_INT_MAX)? len: 0;
 }
 
+inline int cckr_get_move_short_path_string(cckr_t *pcckr, cckr_move_t *m, char *buff) {
+    return cckr_get_short_path_string(pcckr, m->orig, m->dest, buff);
+}
+
 int cckr_get_short_path_string(cckr_t *pcckr, cckr_index_t s, cckr_index_t e, char *buff){
     cckr_index_t buffer[100];
     int i, len = cckr_get_path_between_move(pcckr, s, e, buffer);
     *buff = 0;
-    buff += sprintf(buff, "%d", s);
+    STRING_APPEND(buff, "%d", s);
     for (i = 0; i < len; ++i) {
-        buff += sprintf(buff, "->%d", buffer[i]);
+        STRING_APPEND(buff, "->%d", buffer[i]);
     }
     return len;
 }
@@ -284,10 +321,9 @@ int cckr_print(cckr_t *pcckr) {
 }
 
 int cckr_print_to_string_kernel(cckr_t *pcckr, const char *patt, char *buff) {
-    const char space[] = {32, 32, 32, 32, 0};//"    "; //' '*5
     int i, j, idx, enter;
     for (i = 0; i < CCKR_ROW; ++i) {
-        if (i < 4) buff += sprintf(buff, "%s", space+i);
+        if (i < 4) STRING_APPEND(buff, "%s", cckr_board_place_holder_space+i);
         for (j = enter = 0; j < CCKR_ROW; ++j) {
             if (9<=i && i<=12 && j==0) j += i-8;
             idx = XY2IDX(j, 16-i);
@@ -298,10 +334,10 @@ int cckr_print_to_string_kernel(cckr_t *pcckr, const char *patt, char *buff) {
                 --buff;
                 break;
             } else
-                *buff++= ' ';
+                *buff++= cckr_board_char_space;
             
             if (j>=i-4 || (9<=i && i<=12 && enter))
-                *buff++ = ' ';
+                *buff++ = cckr_board_char_space;
         }
         *buff++ = '\n';
     }
@@ -310,8 +346,7 @@ int cckr_print_to_string_kernel(cckr_t *pcckr, const char *patt, char *buff) {
 }
 
 inline int cckr_print_to_string(cckr_t *pcckr, char *buff) {
-    const char *cchmanchr="_O@*#xm";
-    return cckr_print_to_string_kernel(pcckr, cchmanchr, buff);
+    return cckr_print_to_string_kernel(pcckr, cckr_chess_man_char, buff);
 }
 
 inline int cckr_print_to_string_4colrow(cckr_t *pcckr, char *buff) {
@@ -319,15 +354,36 @@ inline int cckr_print_to_string_4colrow(cckr_t *pcckr, char *buff) {
     return cckr_print_to_string_kernel(pcckr, cchmanchr, buff);
 }
 
+int cckr_print_to_command(cckr_t *pcckr, char *buff) {
+    int lastk = 0, i;
+    char *spp = buff;
+    cckr_chessman_t c;
+    FOREACH_PIT_IN_BOARD(i) {
+        c = CCKR_MANI(pcckr, i);
+        if (0 < c) {
+            if (lastk > 0 && (i-lastk) > 3) {
+                STRING_APPEND(spp, "%d", i);
+                buff = spp;
+            }
+            *buff++ = cckr_chess_man_char[c];
+            spp = buff;
+            lastk = i;
+        } else
+            *buff++ = *cckr_chess_man_char;
+    }
+    *spp = 0;
+    return 0;
+}
+
 int cckr_print_avaible_to_string(cckr_index_t *result, char *string, int count) {
     for (int i = 0, num; i < count;) {
-        string += sprintf(string, "%d:(", result[i++]);
+        STRING_APPEND(string, "%d:(", result[i++]);
         num = result[i++];
         while (num--) {
-            string += sprintf(string, "%d", result[i++]);
-            if (num) *string++ = ' ';
+            STRING_APPEND(string, "%d", result[i++]);
+            if (num) *string++ = cckr_board_char_space;
         }
-        string += sprintf(string, ") ");
+        STRING_APPEND(string, ") ");
     }
     return 0;
 }
