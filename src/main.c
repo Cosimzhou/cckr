@@ -25,9 +25,10 @@ void end(){}
 
 
 int main(int argc, const char * argv[]) {
-    if (argc > 1) {
+    if (argc >= 0) {
         cckr_t cckr;
-        cckr_game_board_init_with_command(&cckr, argv[1]);
+        cckr_game_board_init(&cckr);
+//        cckr_game_board_init_with_command(&cckr, argv[1]);
         cckr_traverse_optimize_param_t ctop = {0};
         cckr_move_t *move = ctop.history.history;
         char text[1024];
@@ -66,5 +67,11 @@ int main(int argc, const char * argv[]) {
     lvtest(0);
     
     test(0);
+    
+    char txt[1024];
+    cckr_t cckr;
+    cckr_game_board_init(&cckr);
+    cckr_print_to_string_with_ruler(&cckr, txt);
+    printf("%s", txt);
     return 0;
 }

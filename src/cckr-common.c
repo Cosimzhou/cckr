@@ -354,6 +354,21 @@ inline int cckr_print_to_string_4colrow(cckr_t *pcckr, char *buff) {
     return cckr_print_to_string_kernel(pcckr, cchmanchr, buff);
 }
 
+int cckr_print_to_string_with_ruler(cckr_t *pcckr, char *buff) {
+    char *sp, *osp, *obuff = buff, tmp[1024];
+    sp = osp = tmp;
+    cckr_print_to_string(pcckr, sp);
+    buff += sprintf(buff, "  01234567890123456789012345\n");
+    for (int i = 0; *sp; ++sp) {
+        if ('\n' == *sp) {
+            *sp = 0;
+            buff += sprintf(buff, "%2d %s\n", ++i, osp);
+            osp = sp+1;
+        }
+    }
+    return (int)(buff - obuff);
+}
+
 int cckr_print_to_command(cckr_t *pcckr, char *buff) {
     int lastk = 0, i;
     char *spp = buff;

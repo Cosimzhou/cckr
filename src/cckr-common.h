@@ -77,6 +77,7 @@ int cckr_game_board_recover(cckr_t *pcckr, cckr_step_history *history);
 int cckr_print(cckr_t *pcckr);
 int cckr_print_to_string_kernel(cckr_t *pcckr, const char *patt, char *buff);
 int cckr_print_to_string(cckr_t *pcckr, char *buff);
+int cckr_print_to_string_with_ruler(cckr_t *pcckr, char *buff);
 int cckr_print_to_command(cckr_t *pcckr, char *buff);
 int cckr_print_to_string_4colrow(cckr_t *pcckr, char *buff);
 int cckr_print_avaible_to_string(cckr_index_t *result, char *string, int count);
